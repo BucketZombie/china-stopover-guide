@@ -1,0 +1,12 @@
+# 依赖目录
+node_modules/
+.cache/
+dist/
+build/
+
+# 环境文件
+.env
+.env.local
+
+# 日志文件
+*.log
