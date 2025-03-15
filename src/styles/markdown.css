@@ -1,0 +1,143 @@
+/* Markdown Content Styling */
+.markdown-content {
+  line-height: 1.6;
+  color: var(--chakra-colors-gray-800);
+}
+
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 {
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.markdown-content h1 {
+  font-size: 2em;
+}
+
+.markdown-content h2 {
+  font-size: 1.5em;
+}
+
+.markdown-content h3 {
+  font-size: 1.25em;
+}
+
+.markdown-content h4 {
+  font-size: 1em;
+}
+
+.markdown-content p {
+  margin-bottom: 1em;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  margin-bottom: 1em;
+  padding-left: 2em;
+}
+
+.markdown-content ul {
+  list-style-type: disc;
+}
+
+.markdown-content ol {
+  list-style-type: decimal;
+}
+
+.markdown-content li {
+  margin-bottom: 0.5em;
+}
+
+.markdown-content a {
+  color: var(--chakra-colors-blue-500);
+  text-decoration: underline;
+}
+
+.markdown-content a:hover {
+  color: var(--chakra-colors-blue-600);
+}
+
+.markdown-content blockquote {
+  padding-left: 1em;
+  border-left: 4px solid var(--chakra-colors-gray-300);
+  color: var(--chakra-colors-gray-600);
+  margin-bottom: 1em;
+}
+
+.markdown-content code {
+  font-family: monospace;
+  background-color: var(--chakra-colors-gray-100);
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-size: 0.9em;
+}
+
+.markdown-content pre {
+  background-color: var(--chakra-colors-gray-100);
+  padding: 1em;
+  border-radius: 5px;
+  overflow-x: auto;
+  margin-bottom: 1em;
+}
+
+.markdown-content pre code {
+  background-color: transparent;
+  padding: 0;
+}
+
+.markdown-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1em;
+}
+
+.markdown-content th,
+.markdown-content td {
+  border: 1px solid var(--chakra-colors-gray-300);
+  padding: 0.5em;
+}
+
+.markdown-content th {
+  background-color: var(--chakra-colors-gray-100);
+  font-weight: 600;
+}
+
+.markdown-content img {
+  max-width: 100%;
+  height: auto;
+  margin: 1em 0;
+  border-radius: 5px;
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .markdown-content {
+  color: var(--chakra-colors-gray-200);
+}
+
+[data-theme="dark"] .markdown-content blockquote {
+  border-left-color: var(--chakra-colors-gray-600);
+  color: var(--chakra-colors-gray-400);
+}
+
+[data-theme="dark"] .markdown-content code {
+  background-color: var(--chakra-colors-gray-700);
+}
+
+[data-theme="dark"] .markdown-content pre {
+  background-color: var(--chakra-colors-gray-700);
+}
+
+[data-theme="dark"] .markdown-content th,
+[data-theme="dark"] .markdown-content td {
+  border-color: var(--chakra-colors-gray-600);
+}
+
+[data-theme="dark"] .markdown-content th {
+  background-color: var(--chakra-colors-gray-700);
+} 

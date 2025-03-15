@@ -27,6 +27,8 @@ import {
   AlertDescription,
 } from '@chakra-ui/react';
 import { generateAIReport } from '../services/api';
+import ReactMarkdown from 'react-markdown';
+import '../styles/markdown.css';
 
 // Mock data for dropdowns (这些数据也可以从API获取)
 const countries = [
@@ -34,7 +36,7 @@ const countries = [
   'Argentina', 'Armenia', 'Australia', 'Austria', 'Azerbaijan', 'Bahamas', 'Bahrain', 'Bangladesh', 'Barbados',
   'Belarus', 'Belgium', 'Belize', 'Benin', 'Bhutan', 'Bolivia', 'Bosnia and Herzegovina', 'Botswana', 'Brazil', 'Brunei', 'Bulgaria',
   'Burkina Faso', 'Burundi', 'Cambodia', 'Cameroon', 'Canada', 'Cape Verde', 'Central African Republic', 'Chad', 'Chile', 'China',
-  'Colombia', 'Comoros', 'Congo', 'Democratic Republic of the', 'Congo', 'Republic of the',
+  'Colombia', 'Comoros', 'Democratic Republic of the Congo','Republic of the Congo',
   'Costa Rica', 'Croatia', 'Cuba', 'Cyprus', 'Czech Republic', 'Denmark', 'Djibouti',
   'Dominica', 'Dominican Republic', 'East Timor (Timor-Leste)', 'Ecuador', 'Egypt', 'El Salvador',
   'Equatorial Guinea', 'Eritrea', 'Estonia', 'Eswatini', 'Ethiopia', 'Fiji', 'Finland', 'France', 'Gabon',
@@ -356,9 +358,9 @@ export default function ReportPage() {
                 </Button>
               </Flex>
               
-              <Text fontSize="md" color="gray.600">
-                {report.introduction}
-              </Text>
+              <Box className="markdown-content">
+                <ReactMarkdown>{report.introduction}</ReactMarkdown>
+              </Box>
               
               <Divider />
               
@@ -367,7 +369,9 @@ export default function ReportPage() {
                   <Heading as="h3" size="md" mb={2}>
                     {section.title}
                   </Heading>
-                  <Text whiteSpace="pre-line">{section.content}</Text>
+                  <Box className="markdown-content">
+                    <ReactMarkdown>{section.content}</ReactMarkdown>
+                  </Box>
                   {index < report.sections.length - 1 && <Divider my={4} />}
                 </Box>
               ))}
