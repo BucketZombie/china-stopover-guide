@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Container,
@@ -26,114 +26,119 @@ import {
   VStack,
   HStack,
   Badge,
+  Spinner,
+  Center,
 } from '@chakra-ui/react';
 import { SearchIcon } from '@chakra-ui/icons';
 import { FaPassport, FaMoneyBillWave, FaUtensils, FaSubway, FaMobileAlt, FaLanguage } from 'react-icons/fa';
+import ReactMarkdown from 'react-markdown';
 
 export default function GuidePage() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [markdownContent, setMarkdownContent] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
   const bgColor = useColorModeValue('white', 'gray.700');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
+  
+  // 定义每个类别的 Markdown 文档路径
+  const markdownPaths = {
+    visa: [
+      { title: 'Stopover Visa Policy', path: '/markdown/visa/stopover-visa-policy.md' },
+      { title: 'Eligibility Requirements', path: '/markdown/visa/eligibility-requirements.md' },
+      { title: 'Participating Cities', path: '/markdown/visa/participating-cities.md' },
+    ],
+    payment: [
+      { title: 'Currency', path: '/markdown/payment/currency.md' },
+      { title: 'Mobile Payments', path: '/markdown/payment/mobile-payments.md' },
+      { title: 'ATMs', path: '/markdown/payment/atms.md' },
+    ],
+    food: [
+      { title: 'Regional Cuisines', path: '/markdown/food/regional-cuisines.md' },
+      { title: 'Must-Try Dishes', path: '/markdown/food/must-try-dishes.md' },
+      { title: 'Dining Etiquette', path: '/markdown/food/dining-etiquette.md' },
+    ],
+    transportation: [
+      { title: 'Public Transit', path: '/markdown/transportation/public-transit.md' },
+      { title: 'Taxis', path: '/markdown/transportation/taxis.md' },
+      { title: 'Ride-Sharing', path: '/markdown/transportation/ride-sharing.md' },
+    ],
+    communication: [
+      { title: 'Internet Access', path: '/markdown/communication/internet-access.md' },
+      { title: 'Wi-Fi Availability', path: '/markdown/communication/wifi-availability.md' },
+      { title: 'Useful Apps', path: '/markdown/communication/useful-apps.md' },
+    ],
+    culture: [
+      { title: 'Basic Phrases', path: '/markdown/culture/basic-phrases.md' },
+      { title: 'Cultural Etiquette', path: '/markdown/culture/cultural-etiquette.md' },
+      { title: 'Bargaining', path: '/markdown/culture/bargaining.md' },
+    ],
+  };
+  
+  // 加载 Markdown 文件
+  useEffect(() => {
+    const loadMarkdownFiles = async () => {
+      setIsLoading(true);
+      const content = {};
+      
+      try {
+        // 对每个类别和每个文档加载 Markdown 内容
+        for (const [category, documents] of Object.entries(markdownPaths)) {
+          content[category] = [];
+          
+          for (const doc of documents) {
+            try {
+              const response = await fetch(doc.path);
+              
+              if (!response.ok) {
+                // 如果无法加载 Markdown 文件，使用备用内容
+                content[category].push({
+                  ...doc,
+                  content: `# ${doc.title}\n\nContent is being prepared. Please check back later.`,
+                });
+                console.warn(`Failed to load ${doc.path}: ${response.statusText}`);
+                continue;
+              }
+              
+              const text = await response.text();
+              content[category].push({
+                ...doc,
+                content: text,
+              });
+            } catch (err) {
+              console.error(`Error loading ${doc.path}:`, err);
+              content[category].push({
+                ...doc,
+                content: `# ${doc.title}\n\nContent is temporarily unavailable.`,
+              });
+            }
+          }
+        }
+        
+        setMarkdownContent(content);
+        setIsLoading(false);
+      } catch (err) {
+        console.error('Error loading markdown files:', err);
+        setError('Failed to load guide content. Please try again later.');
+        setIsLoading(false);
+      }
+    };
+    
+    loadMarkdownFiles();
+  }, []);
   
   const handleSearch = (e) => {
     setSearchQuery(e.target.value);
   };
   
-  // Mock guide content
-  const guideContent = {
-    visa: [
-      {
-        title: 'Stopover Visa Policy',
-        content: 'China offers a 24-hour, 72-hour, or 144-hour visa-free transit policy depending on your nationality and the city you\'re visiting. This allows eligible travelers to stay in specific cities or regions without obtaining a visa in advance.',
-      },
-      {
-        title: 'Eligibility Requirements',
-        content: 'To qualify for visa-free transit, you must have a valid passport with at least 6 months validity, a confirmed onward ticket to a third country (not the country you departed from), and in some cases, proof of accommodation.',
-      },
-      {
-        title: 'Participating Cities',
-        content: 'Major cities like Beijing, Shanghai, Guangzhou, and Chengdu participate in the visa-free transit program. However, the duration of allowed stay varies by city, so check the specific policy for your destination.',
-      },
-    ],
-    payment: [
-      {
-        title: 'Currency',
-        content: 'The official currency is the Chinese Yuan (CNY), also known as Renminbi (RMB). It\'s advisable to have some cash on hand, especially for small vendors and transportation.',
-      },
-      {
-        title: 'Mobile Payments',
-        content: 'WeChat Pay and Alipay are ubiquitous in China, but they typically require a Chinese bank account. Some merchants in tourist areas accept international credit cards, particularly Visa and Mastercard.',
-      },
-      {
-        title: 'ATMs',
-        content: 'ATMs are widely available in cities, and many accept international cards. Look for ATMs at banks like Bank of China, ICBC, or China Construction Bank for better rates and reliability.',
-      },
-    ],
-    food: [
-      {
-        title: 'Regional Cuisines',
-        content: 'China has eight major culinary traditions, each with distinct flavors and cooking methods. Popular styles include Cantonese (mild, fresh), Sichuan (spicy), and Jiangsu (sweet, precise).',
-      },
-      {
-        title: 'Must-Try Dishes',
-        content: 'Depending on your location, consider trying Peking duck in Beijing, soup dumplings (xiaolongbao) in Shanghai, hot pot in Chengdu, or dim sum in Guangzhou.',
-      },
-      {
-        title: 'Dining Etiquette',
-        content: 'It\'s customary to share dishes family-style. Using chopsticks is appreciated, but forks are often available upon request. Tipping is not expected in most restaurants.',
-      },
-    ],
-    transportation: [
-      {
-        title: 'Public Transit',
-        content: 'Major cities have extensive, modern subway systems with English signage. Subway is often the fastest way to get around during rush hour. Single-journey tickets or reloadable cards are available.',
-      },
-      {
-        title: 'Taxis',
-        content: 'Taxis are affordable but drivers rarely speak English. Have your destination written in Chinese characters to show the driver. Official taxis use meters and provide receipts.',
-      },
-      {
-        title: 'Ride-Sharing',
-        content: 'Didi is China\'s equivalent to Uber and offers an English interface in its international app. It\'s convenient for travelers who want to avoid language barriers with taxi drivers.',
-      },
-    ],
-    communication: [
-      {
-        title: 'Internet Access',
-        content: 'Many Western websites and apps (Google, Facebook, Instagram, WhatsApp) are blocked in China. Consider downloading a VPN before your trip if you need access to these services.',
-      },
-      {
-        title: 'Wi-Fi Availability',
-        content: 'Free Wi-Fi is available in most hotels, cafes, and airports, though you may need a Chinese phone number to register. Some cities offer free public Wi-Fi in tourist areas.',
-      },
-      {
-        title: 'Useful Apps',
-        content: 'Download apps like Baidu Maps, Didi, and a translation app like Pleco or Baidu Translate to help navigate and communicate during your stopover.',
-      },
-    ],
-    culture: [
-      {
-        title: 'Basic Phrases',
-        content: 'Learning a few basic Mandarin phrases can enhance your experience: "Nǐ hǎo" (Hello), "Xièxiè" (Thank you), "Duōshao qián" (How much?), "Cèsuǒ zài nǎlǐ" (Where is the bathroom?).',
-      },
-      {
-        title: 'Cultural Etiquette',
-        content: 'Respect personal space, avoid public displays of affection, and dress modestly when visiting temples or traditional areas. Remove shoes when entering someone\'s home if you see shoes at the door.',
-      },
-      {
-        title: 'Bargaining',
-        content: 'Bargaining is expected in markets and small shops, but not in department stores or established businesses. Start at about 50% of the asking price and negotiate from there.',
-      },
-    ],
-  };
-  
-  // Filter content based on search query
+  // 过滤内容基于搜索查询
   const filterContent = () => {
-    if (!searchQuery) return guideContent;
+    if (!searchQuery || Object.keys(markdownContent).length === 0) return markdownContent;
     
     const filtered = {};
     
-    Object.entries(guideContent).forEach(([category, items]) => {
+    Object.entries(markdownContent).forEach(([category, items]) => {
       const filteredItems = items.filter(
         item => 
           item.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -150,7 +155,7 @@ export default function GuidePage() {
   
   const filteredContent = filterContent();
   
-  // Category icons
+  // 类别图标
   const categoryIcons = {
     visa: FaPassport,
     payment: FaMoneyBillWave,
@@ -159,6 +164,34 @@ export default function GuidePage() {
     communication: FaMobileAlt,
     culture: FaLanguage,
   };
+
+  // 加载状态
+  if (isLoading) {
+    return (
+      <Container maxW="6xl" py={10}>
+        <Center h="50vh">
+          <VStack spacing={4}>
+            <Spinner size="xl" color="blue.500" thickness="4px" />
+            <Text>Loading guide content...</Text>
+          </VStack>
+        </Center>
+      </Container>
+    );
+  }
+
+  // 错误状态
+  if (error) {
+    return (
+      <Container maxW="6xl" py={10}>
+        <Box textAlign="center" p={8} bg="red.50" borderRadius="md">
+          <Heading as="h2" size="lg" color="red.500" mb={4}>
+            Error Loading Content
+          </Heading>
+          <Text>{error}</Text>
+        </Box>
+      </Container>
+    );
+  }
 
   return (
     <Container maxW="6xl" py={10}>
@@ -237,7 +270,9 @@ export default function GuidePage() {
                             <AccordionIcon />
                           </AccordionButton>
                           <AccordionPanel pb={4} pt={4} px={6}>
-                            <Text>{item.content}</Text>
+                            <Box className="markdown-content">
+                              <ReactMarkdown>{item.content}</ReactMarkdown>
+                            </Box>
                           </AccordionPanel>
                         </AccordionItem>
                       ))}
