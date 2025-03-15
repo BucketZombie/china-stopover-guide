@@ -45,13 +45,13 @@ export default function GuidePage() {
   // 定义每个类别的 Markdown 文档路径
   const markdownPaths = {
     visa: [
-      { title: 'Stopover Visa Policy', path: '/markdown/visa/stopover-visa-policy.md' },
-      { title: 'Eligibility Requirements', path: '/markdown/visa/eligibility-requirements.md' },
+      { title: 'Stopover Visa Policy', path: 'https://sozovgqwftswrgcrvtff.supabase.co/storage/v1/object/public/test//Stopover%20Vise%20Policy.md' },
+      { title: 'Eligibility Requirements', path: 'https://sozovgqwftswrgcrvtff.supabase.co/storage/v1/object/public/test//requirement.md' },
       { title: 'Participating Cities', path: '/markdown/visa/participating-cities.md' },
     ],
     payment: [
       { title: 'Currency', path: '/markdown/payment/currency.md' },
-      { title: 'Mobile Payments', path: '/markdown/payment/mobile-payments.md' },
+      { title: 'Mobile Payments', path: 'https://sozovgqwftswrgcrvtff.supabase.co/storage/v1/object/public/test//t1.md' },
       { title: 'ATMs', path: '/markdown/payment/atms.md' },
     ],
     food: [
