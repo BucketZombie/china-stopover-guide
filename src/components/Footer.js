@@ -1,6 +1,6 @@
 import React from 'react';
-import { Box, Container, Stack, Text, Link, useColorModeValue } from '@chakra-ui/react';
-import { Link as RouterLink } from 'react-router-dom';
+import { Box, Container, Stack, Text, Link, HStack, Divider, useColorModeValue } from '@chakra-ui/react';
+import { EmailIcon } from '@chakra-ui/icons';
 
 export default function Footer() {
   return (
@@ -11,21 +11,27 @@ export default function Footer() {
       py={6}
     >
       <Container
-        as={Stack}
         maxW={'6xl'}
         py={4}
-        direction={{ base: 'column', md: 'row' }}
-        spacing={4}
-        justify={{ base: 'center', md: 'space-between' }}
-        align={{ base: 'center', md: 'center' }}
+        textAlign="center"
       >
-        <Stack direction={'row'} spacing={6}>
-          <Link as={RouterLink} to={'/'}>Home</Link>
-          <Link as={RouterLink} to={'/report'}>Travel Report</Link>
-          <Link as={RouterLink} to={'/guide'}>Travel Guide</Link>
-          <Link as={RouterLink} to={'/emergency'}>Emergency</Link>
+        <Stack spacing={4} align="center">
+          <Text fontSize="sm">© {new Date().getFullYear()} China Stopover Guide. All rights reserved</Text>
+          
+          <Divider maxW="300px" />
+          
+          <HStack spacing={4} justify="center" fontSize="sm">
+            <Text fontWeight="medium">Feedback:</Text>
+            <HStack>
+              <EmailIcon color="blue.500" />
+              <Link href="mailto:2219172569@qq.com" color="blue.500">2219172569@qq.com</Link>
+            </HStack>
+            <HStack>
+              <EmailIcon color="blue.500" />
+              <Link href="mailto:llleemail@163.com" color="blue.500">llleemail@163.com</Link>
+            </HStack>
+          </HStack>
         </Stack>
-        <Text>© {new Date().getFullYear()} China Stopover Guide. All rights reserved</Text>
       </Container>
     </Box>
   );

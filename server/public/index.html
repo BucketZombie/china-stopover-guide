@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API服务器控制面板</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .status-indicator {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 5px;
+    }
+    .status-connected { background-color: #28a745; }
+    .status-disconnected { background-color: #dc3545; }
+    .status-unknown { background-color: #6c757d; }
+    
+    .tab-content {
+      margin-top: 20px;
+    }
+    
+    .card {
+      margin-bottom: 20px;
+    }
+    
+    #requestTable, #workflowTable {
+      font-size: 0.9rem;
+    }
+    
+    pre {
+      background-color: #f8f9fa;
+      padding: 10px;
+      border-radius: 4px;
+      max-height: 300px;
+      overflow: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="container-fluid py-3">
+    <h2 class="mb-4">China Stopover Guide API服务器控制面板</h2>
+    
+    <!-- 导航栏 -->
+    <ul class="nav nav-tabs" id="mainTab" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="status-tab" data-bs-toggle="tab" data-bs-target="#status" type="button" role="tab">系统状态</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="requests-tab" data-bs-toggle="tab" data-bs-target="#requests" type="button" role="tab">请求日志</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="workflows-tab" data-bs-toggle="tab" data-bs-target="#workflows" type="button" role="tab">工作流</button>
+      </li>
+    </ul>
+    
+    <!-- 内容区域 -->
+    <div class="tab-content" id="mainTabContent">
+      <!-- 系统状态 -->
+      <div class="tab-pane fade show active" id="status" role="tabpanel">
+        <div class="row">
+          <div class="col-md-6">
+            <div class="card">
+              <div class="card-header">
+                服务器状态
+              </div>
+              <div class="card-body">
+                <div class="mb-2">
+                  <strong>运行时间:</strong> <span id="serverUptime">加载中...</span>
+                </div>
+                <div class="mb-2">
+                  <strong>启动时间:</strong> <span id="serverStartTime">加载中...</span>
+                </div>
+                <div class="mb-2">
+                  <strong>内存使用:</strong> <span id="serverMemory">加载中...</span>
+                </div>
+                <div class="mb-2">
+                  <strong>环境:</strong> <span id="serverEnv">加载中...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-md-6">
+            <div class="card">
+              <div class="card-header">
+                连接状态
+              </div>
+              <div class="card-body">
+                <div class="mb-2">
+                  <strong>Dify API:</strong> 
+                  <span class="status-indicator" id="difyStatusIndicator"></span>
+                  <span id="difyStatus">加载中...</span>
+                </div>
+                <div class="mb-2">
+                  <strong>API服务器:</strong> 
+                  <span class="status-indicator status-connected"></span>
+                  <span>已连接</span>
+                </div>
+                <div class="mb-2">
+                  <strong>前端连接:</strong> 
+                  <span class="status-indicator" id="frontendStatusIndicator"></span>
+                  <span id="frontendStatus">加载中...</span>
+                </div>
+                <div class="mb-2">
+                  <strong>上次检查:</strong> <span id="lastChecked">加载中...</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="card">
+              <div class="card-header">
+                工作流统计
+              </div>
+              <div class="card-body">
+                <div class="mb-2">
+                  <strong>活跃工作流:</strong> <span id="activeWorkflows">加载中...</span>
+                </div>
+                <div class="mb-2">
+                  <strong>已完成工作流:</strong> <span id="completedWorkflows">加载中...</span>
+                </div>
+                <div class="mb-2">
+                  <strong>失败工作流:</strong> <span id="failedWorkflows">加载中...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 请求日志 -->
+      <div class="tab-pane fade" id="requests" role="tabpanel">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h4>最近请求日志</h4>
+          <button id="refreshRequestsBtn" class="btn btn-sm btn-primary">刷新</button>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-striped table-hover" id="requestTable">
+            <thead>
+              <tr>
+                <th>时间</th>
+                <th>方法</th>
+                <th>路径</th>
+                <th>状态</th>
+                <th>耗时(ms)</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="requestTableBody">
+              <tr>
+                <td colspan="6" class="text-center">加载中...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- 请求详情模态框 -->
+        <div class="modal fade" id="requestDetailModal" tabindex="-1">
+          <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">请求详情</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <h6>请求信息</h6>
+                <pre id="requestDetail"></pre>
+                <h6>请求参数</h6>
+                <pre id="requestParams"></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 工作流 -->
+      <div class="tab-pane fade" id="workflows" role="tabpanel">
+        <ul class="nav nav-pills mb-3" id="workflowTab" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="active-workflows-tab" data-bs-toggle="pill" data-bs-target="#active-workflows" type="button" role="tab">活跃工作流</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="all-workflows-tab" data-bs-toggle="pill" data-bs-target="#all-workflows" type="button" role="tab">所有工作流</button>
+          </li>
+        </ul>
+        
+        <div class="tab-content" id="workflowTabContent">
+          <!-- 活跃工作流 -->
+          <div class="tab-pane fade show active" id="active-workflows" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5>活跃工作流</h5>
+              <button id="refreshActiveWorkflowsBtn" class="btn btn-sm btn-primary">刷新</button>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-striped table-hover" id="activeWorkflowTable">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>状态</th>
+                    <th>开始时间</th>
+                    <th>运行时间</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="activeWorkflowTableBody">
+                  <tr>
+                    <td colspan="5" class="text-center">加载中...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
+          <!-- 所有工作流 -->
+          <div class="tab-pane fade" id="all-workflows" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5>所有工作流</h5>
+              <button id="refreshAllWorkflowsBtn" class="btn btn-sm btn-primary">刷新</button>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-striped table-hover" id="allWorkflowTable">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>状态</th>
+                    <th>开始时间</th>
+                    <th>完成时间</th>
+                    <th>耗时(秒)</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="allWorkflowTableBody">
+                  <tr>
+                    <td colspan="6" class="text-center">加载中...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 工作流详情模态框 -->
+        <div class="modal fade" id="workflowDetailModal" tabindex="-1">
+          <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">工作流详情</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <div class="mb-3">
+                  <h6>基本信息</h6>
+                  <div id="workflowBasicInfo"></div>
+                </div>
+                <div class="mb-3">
+                  <h6>参数</h6>
+                  <pre id="workflowParams"></pre>
+                  <div class="mt-3">
+                    <h6>关键参数</h6>
+                    <table class="table table-sm" id="keyParamsTable">
+                      <thead>
+                        <tr>
+                          <th>参数名</th>
+                          <th>值</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>出发国家</td>
+                          <td id="param-departure_country">-</td>
+                        </tr>
+                        <tr>
+                          <td>目的地</td>
+                          <td id="param-destination">-</td>
+                        </tr>
+                        <tr>
+                          <td>中转日期</td>
+                          <td id="param-stopover_date">-</td>
+                        </tr>
+                        <tr>
+                          <td>中转时长</td>
+                          <td id="param-stopover_duration">-</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <h6>报告信息</h6>
+                  <div id="workflowReportInfo"></div>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <a id="viewReportLink" href="#" class="btn btn-primary" target="_blank">查看报告</a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // 状态指示器颜色设置
+    const statusColors = {
+      connected: 'status-connected',
+      disconnected: 'status-disconnected',
+      unknown: 'status-unknown',
+      running: 'text-primary',
+      succeeded: 'text-success',
+      failed: 'text-danger',
+      stopped: 'text-warning'
+    };
+    
+    // 页面加载完成后执行
+    document.addEventListener('DOMContentLoaded', () => {
+      // 初始加载
+      loadSystemStatus();
+      loadRequests();
+      loadWorkflows('running');
+      loadWorkflows();
+      checkFrontendConnection();
+      
+      // 设置定时刷新
+      setInterval(loadSystemStatus, 10000); // 每10秒刷新一次系统状态
+      setInterval(checkFrontendConnection, 30000); // 每30秒检查一次前端连接
+      
+      // 设置刷新按钮事件
+      document.getElementById('refreshRequestsBtn').addEventListener('click', loadRequests);
+      document.getElementById('refreshActiveWorkflowsBtn').addEventListener('click', () => loadWorkflows('running'));
+      document.getElementById('refreshAllWorkflowsBtn').addEventListener('click', () => loadWorkflows());
+    });
+    
+    // 加载系统状态
+    async function loadSystemStatus() {
+      try {
+        const response = await fetch('/admin/status');
+        const data = await response.json();
+        
+        if (data.success) {
+          // 服务器状态
+          document.getElementById('serverUptime').textContent = formatTime(data.server.uptime);
+          document.getElementById('serverStartTime').textContent = formatDate(data.server.startTime);
+          document.getElementById('serverMemory').textContent = `${data.server.memoryUsage.heapUsed} MB / ${data.server.memoryUsage.heapTotal} MB`;
+          document.getElementById('serverEnv').textContent = `${data.server.systemInfo.platform} (Node ${data.server.systemInfo.nodeVersion})`;
+          
+          // Dify连接状态
+          const difyStatusIndicator = document.getElementById('difyStatusIndicator');
+          difyStatusIndicator.className = 'status-indicator ' + statusColors[data.dify.status] || statusColors.unknown;
+          document.getElementById('difyStatus').textContent = data.dify.status === 'connected' ? '已连接' : 
+                                                             (data.dify.status === 'disconnected' ? '未连接' : '未知');
+          document.getElementById('lastChecked').textContent = formatDate(data.dify.lastChecked);
+          
+          // 工作流统计
+          document.getElementById('activeWorkflows').textContent = data.workflows.activeWorkflows;
+          document.getElementById('completedWorkflows').textContent = data.workflows.completedWorkflows;
+          document.getElementById('failedWorkflows').textContent = data.workflows.failedWorkflows;
+        }
+      } catch (error) {
+        console.error('加载系统状态失败:', error);
+      }
+    }
+    
+    // 加载请求日志
+    async function loadRequests() {
+      try {
+        const response = await fetch('/admin/requests');
+        const data = await response.json();
+        
+        if (data.success) {
+          const tableBody = document.getElementById('requestTableBody');
+          
+          if (data.logs.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="6" class="text-center">暂无请求记录</td></tr>';
+            return;
+          }
+          
+          tableBody.innerHTML = '';
+          
+          data.logs.forEach(log => {
+            const row = document.createElement('tr');
+            
+            // 设置状态样式
+            const statusClass = log.statusCode < 400 ? 'text-success' : 'text-danger';
+            
+            row.innerHTML = `
+              <td>${formatDate(log.timestamp)}</td>
+              <td>${log.method}</td>
+              <td>${log.path}</td>
+              <td class="${statusClass}">${log.statusCode}</td>
+              <td>${log.duration}</td>
+              <td>
+                <button class="btn btn-sm btn-outline-info view-request-btn" data-log='${JSON.stringify(log)}'>
+                  详情
+                </button>
+              </td>
+            `;
+            
+            tableBody.appendChild(row);
+          });
+          
+          // 绑定详情按钮事件
+          document.querySelectorAll('.view-request-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+              const log = JSON.parse(e.target.getAttribute('data-log'));
+              showRequestDetail(log);
+            });
+          });
+        }
+      } catch (error) {
+        console.error('加载请求日志失败:', error);
+      }
+    }
+    
+    // 加载工作流列表
+    async function loadWorkflows(status = null) {
+      try {
+        const url = status ? `/admin/workflows?status=${status}` : '/admin/workflows';
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.success) {
+          // 根据状态选择目标表格
+          const tableBodyId = status === 'running' ? 'activeWorkflowTableBody' : 'allWorkflowTableBody';
+          const tableBody = document.getElementById(tableBodyId);
+          
+          if (data.workflows.length === 0) {
+            const colSpan = status === 'running' ? 5 : 6;
+            tableBody.innerHTML = `<tr><td colspan="${colSpan}" class="text-center">暂无工作流记录</td></tr>`;
+            return;
+          }
+          
+          tableBody.innerHTML = '';
+          
+          data.workflows.forEach(workflow => {
+            const row = document.createElement('tr');
+            
+            // 设置状态样式
+            const statusClass = statusColors[workflow.status] || '';
+            
+            if (status === 'running') {
+              // 活跃工作流表格
+              row.innerHTML = `
+                <td>${workflow.id}</td>
+                <td class="${statusClass}">${formatStatus(workflow.status)}</td>
+                <td>${formatDate(workflow.startTime)}</td>
+                <td>${workflow.elapsedTime}秒</td>
+                <td>
+                  <button class="btn btn-sm btn-outline-info view-workflow-btn" data-id="${workflow.id}">
+                    详情
+                  </button>
+                </td>
+              `;
+            } else {
+              // 所有工作流表格
+              row.innerHTML = `
+                <td>${workflow.id}</td>
+                <td class="${statusClass}">${formatStatus(workflow.status)}</td>
+                <td>${formatDate(workflow.startTime)}</td>
+                <td>${workflow.finishTime ? formatDate(workflow.finishTime) : '-'}</td>
+                <td>${workflow.elapsedTime}</td>
+                <td>
+                  <button class="btn btn-sm btn-outline-info view-workflow-btn" data-id="${workflow.id}">
+                    详情
+                  </button>
+                  ${workflow.hasReport ? `
+                    <a href="/api/report/${workflow.id}" target="_blank" class="btn btn-sm btn-outline-success ms-1">
+                      报告
+                    </a>
+                  ` : ''}
+                </td>
+              `;
+            }
+            
+            tableBody.appendChild(row);
+          });
+          
+          // 绑定详情按钮事件
+          document.querySelectorAll('.view-workflow-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+              const id = e.target.getAttribute('data-id');
+              loadWorkflowDetail(id);
+            });
+          });
+        }
+      } catch (error) {
+        console.error('加载工作流列表失败:', error);
+      }
+    }
+    
+    // 加载工作流详情
+    async function loadWorkflowDetail(id) {
+      try {
+        const response = await fetch(`/admin/workflows/${id}`);
+        const data = await response.json();
+        
+        if (data.success) {
+          const workflow = data.workflow;
+          
+          // 更新基本信息
+          const basicInfoEl = document.getElementById('workflowBasicInfo');
+          basicInfoEl.innerHTML = `
+            <div><strong>ID:</strong> ${workflow.id}</div>
+            <div><strong>任务ID:</strong> ${workflow.taskId}</div>
+            <div><strong>状态:</strong> <span class="${statusColors[workflow.status] || ''}">${formatStatus(workflow.status)}</span></div>
+            <div><strong>开始时间:</strong> ${formatDate(workflow.startTime)}</div>
+            <div><strong>完成时间:</strong> ${workflow.finishTime ? formatDate(workflow.finishTime) : '-'}</div>
+            <div><strong>耗时:</strong> ${workflow.elapsedTime}秒</div>
+          `;
+          
+          // 更新参数信息
+          const paramsEl = document.getElementById('workflowParams');
+          paramsEl.textContent = JSON.stringify(workflow.params, null, 2);
+          
+          // 更新关键参数表格
+          if (workflow.params) {
+            // 显示关键参数
+            document.getElementById('param-departure_country').textContent = 
+              workflow.params.departure_country || '-';
+            document.getElementById('param-destination').textContent = 
+              workflow.params.destination || '-';
+            document.getElementById('param-stopover_date').textContent = 
+              workflow.params.stopover_date || '-';
+            document.getElementById('param-stopover_duration').textContent = 
+              workflow.params.stopover_duration || '-';
+          }
+          
+          // 更新报告信息
+          const reportInfoEl = document.getElementById('workflowReportInfo');
+          if (workflow.reportSummary.available) {
+            reportInfoEl.innerHTML = `
+              <div class="alert alert-success">
+                报告已生成，长度: ${workflow.reportSummary.length} 字符
+              </div>
+            `;
+            
+            // 更新查看报告链接
+            const viewReportLink = document.getElementById('viewReportLink');
+            viewReportLink.href = `/api/report/${workflow.id}`;
+            viewReportLink.style.display = 'inline-block';
+          } else {
+            reportInfoEl.innerHTML = `
+              <div class="alert alert-warning">
+                报告尚未生成
+              </div>
+            `;
+            
+            // 隐藏查看报告链接
+            document.getElementById('viewReportLink').style.display = 'none';
+          }
+          
+          // 显示模态框
+          const modal = new bootstrap.Modal(document.getElementById('workflowDetailModal'));
+          modal.show();
+        }
+      } catch (error) {
+        console.error('加载工作流详情失败:', error);
+      }
+    }
+    
+    // 显示请求详情
+    function showRequestDetail(log) {
+      document.getElementById('requestDetail').textContent = JSON.stringify({
+        timestamp: log.timestamp,
+        method: log.method,
+        path: log.path,
+        statusCode: log.statusCode,
+        duration: log.duration,
+        ip: log.ip,
+        userAgent: log.userAgent
+      }, null, 2);
+      
+      document.getElementById('requestParams').textContent = JSON.stringify(log.requestParams, null, 2);
+      
+      const modal = new bootstrap.Modal(document.getElementById('requestDetailModal'));
+      modal.show();
+    }
+    
+    // 时间格式化
+    function formatTime(seconds) {
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const secs = Math.floor(seconds % 60);
+      
+      return `${hours}小时 ${minutes}分钟 ${secs}秒`;
+    }
+    
+    // 日期格式化
+    function formatDate(dateStr) {
+      const date = new Date(dateStr);
+      return date.toLocaleString('zh-CN');
+    }
+    
+    // 状态格式化
+    function formatStatus(status) {
+      const statusMap = {
+        running: '运行中',
+        succeeded: '成功',
+        failed: '失败',
+        stopped: '已停止'
+      };
+      
+      return statusMap[status] || status;
+    }
+    
+    // 检查前端连接状态
+    async function checkFrontendConnection() {
+      try {
+        const frontendStatusIndicator = document.getElementById('frontendStatusIndicator');
+        const frontendStatusText = document.getElementById('frontendStatus');
+        
+        // 尝试访问前端页面或者API
+        const response = await fetch('/api/health');
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          // 更新状态指示器
+          frontendStatusIndicator.className = 'status-indicator status-connected';
+          frontendStatusText.textContent = '已连接';
+          
+          // 记录上次连接时间
+          document.getElementById('lastChecked').textContent = formatDate(new Date());
+        } else {
+          // 连接失败
+          frontendStatusIndicator.className = 'status-indicator status-disconnected';
+          frontendStatusText.textContent = '未连接';
+        }
+      } catch (error) {
+        // 连接错误
+        const frontendStatusIndicator = document.getElementById('frontendStatusIndicator');
+        const frontendStatusText = document.getElementById('frontendStatus');
+        
+        frontendStatusIndicator.className = 'status-indicator status-disconnected';
+        frontendStatusText.textContent = '连接失败: ' + error.message;
+        
+        console.error('检查前端连接失败:', error);
+      }
+    }
+  </script>
+</body>
+</html> 
